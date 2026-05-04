@@ -1,0 +1,338 @@
+import tkinter as tk
+from tkinter import messagebox, simpledialog
+ 
+ 
+# ─────────────────────────────────────────────
+#  CONFIGURAÇÕES DE CORES E FONTES
+# ─────────────────────────────────────────────
+COR_FUNDO        = "#2b2b2b"   # Cinza escuro (fundo geral)
+COR_PAINEL       = "#3a3a3a"   # Cinza médio (painel de tarefas)
+COR_INPUT        = "#4a4a4a"   # Cinza claro (campo de texto)
+COR_BOTAO_ADD    = "#1a1a1a"   # Preto (botão adicionar)
+COR_TEXTO        = "#f0f0f0"   # Branco suave
+COR_TEXTO_FEITO  = "#888888"   # Cinza (tarefa concluída)
+COR_LIXEIRA      = "#e05555"   # Vermelho (botão excluir)
+COR_LAPIS        = "#cccccc"   # Branco acinzentado (botão editar)
+COR_ITEM         = "#454545"   # Fundo de cada tarefa
+COR_HOVER        = "#505050"   # Hover nos itens
+ 
+FONTE_TITULO     = ("Segoe UI", 15, "bold")
+FONTE_INPUT      = ("Segoe UI", 11)
+FONTE_BOTAO      = ("Segoe UI", 10, "bold")
+FONTE_TAREFA     = ("Segoe UI", 11)
+ 
+ 
+# ─────────────────────────────────────────────
+#  CLASSE PRINCIPAL DO APLICATIVO
+# ─────────────────────────────────────────────
+class GerenciadorTarefas:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Gerenciador de Tarefas")
+        self.root.geometry("480x620")
+        self.root.minsize(400, 500)
+        self.root.configure(bg=COR_FUNDO)
+        self.root.resizable(True, True)
+ 
+        # Lista interna de tarefas
+        # Cada tarefa é um dicionário: {"texto": str, "feito": bool}
+        self.tarefas = []
+ 
+        self._construir_interface()
+ 
+    # ──────────────────────────────────────────
+    #  CONSTRUÇÃO DA INTERFACE
+    # ──────────────────────────────────────────
+    def _construir_interface(self):
+        """Monta todos os widgets da janela principal."""
+ 
+        # ── Título ──────────────────────────────
+        frame_titulo = tk.Frame(self.root, bg=COR_FUNDO)
+        frame_titulo.pack(fill="x", padx=20, pady=(20, 12))
+ 
+        tk.Label(
+            frame_titulo,
+            text="Gerenciador de Tarefas",
+            font=FONTE_TITULO,
+            bg=COR_FUNDO,
+            fg=COR_TEXTO,
+        ).pack(anchor="w")
+ 
+        # ── Campo de entrada + Botão Adicionar ──
+        frame_entrada = tk.Frame(self.root, bg=COR_FUNDO)
+        frame_entrada.pack(fill="x", padx=20, pady=(0, 14))
+ 
+        # Campo de texto
+        self.entrada = tk.Entry(
+            frame_entrada,
+            font=FONTE_INPUT,
+            bg=COR_INPUT,
+            fg=COR_TEXTO,
+            insertbackground=COR_TEXTO,       # cor do cursor de digitação
+            relief="flat",
+            bd=0,
+        )
+        self.entrada.pack(side="left", fill="x", expand=True, ipady=9, ipadx=10)
+        self.entrada.insert(0, "Nova tarefa...")
+        self.entrada.config(fg="#888888")
+ 
+        # Placeholder: apaga o texto de dica ao clicar
+        self.entrada.bind("<FocusIn>",  self._limpar_placeholder)
+        self.entrada.bind("<FocusOut>", self._restaurar_placeholder)
+ 
+        # Pressionar Enter também adiciona a tarefa
+        self.entrada.bind("<Return>", lambda e: self._adicionar_tarefa())
+ 
+        # Botão "+ Adicionar"
+        btn_add = tk.Button(
+            frame_entrada,
+            text="+ Adicionar",
+            font=FONTE_BOTAO,
+            bg=COR_BOTAO_ADD,
+            fg=COR_TEXTO,
+            activebackground="#333333",
+            activeforeground=COR_TEXTO,
+            relief="flat",
+            cursor="hand2",
+            padx=14,
+            pady=9,
+            command=self._adicionar_tarefa,
+        )
+        btn_add.pack(side="left", padx=(8, 0))
+ 
+        # ── Área de lista (rolável) ──────────────
+        # Canvas + Scrollbar permitem rolar quando há muitas tarefas
+        frame_lista_container = tk.Frame(self.root, bg=COR_FUNDO)
+        frame_lista_container.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+ 
+        self.canvas = tk.Canvas(
+            frame_lista_container,
+            bg=COR_FUNDO,
+            highlightthickness=0,
+        )
+        scrollbar = tk.Scrollbar(
+            frame_lista_container,
+            orient="vertical",
+            command=self.canvas.yview,
+        )
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+ 
+        scrollbar.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both", expand=True)
+ 
+        # Frame interno que fica dentro do canvas
+        self.frame_lista = tk.Frame(self.canvas, bg=COR_FUNDO)
+        self.canvas_window = self.canvas.create_window(
+            (0, 0), window=self.frame_lista, anchor="nw"
+        )
+ 
+        # Atualiza região de scroll quando o frame interno muda de tamanho
+        self.frame_lista.bind("<Configure>", self._atualizar_scroll)
+        self.canvas.bind("<Configure>",      self._redimensionar_canvas)
+ 
+        # Scroll com a roda do mouse
+        self.canvas.bind_all("<MouseWheel>",      self._scroll_mouse)       # Windows
+        self.canvas.bind_all("<Button-4>",        self._scroll_mouse_linux) # Linux up
+        self.canvas.bind_all("<Button-5>",        self._scroll_mouse_linux) # Linux down
+ 
+    # ──────────────────────────────────────────
+    #  PLACEHOLDER DO CAMPO DE TEXTO
+    # ──────────────────────────────────────────
+    def _limpar_placeholder(self, event):
+        if self.entrada.get() == "Nova tarefa...":
+            self.entrada.delete(0, "end")
+            self.entrada.config(fg=COR_TEXTO)
+ 
+    def _restaurar_placeholder(self, event):
+        if not self.entrada.get().strip():
+            self.entrada.insert(0, "Nova tarefa...")
+            self.entrada.config(fg="#888888")
+ 
+    # ──────────────────────────────────────────
+    #  SCROLL
+    # ──────────────────────────────────────────
+    def _atualizar_scroll(self, event=None):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+ 
+    def _redimensionar_canvas(self, event):
+        # Faz o frame interno ocupar toda a largura do canvas
+        self.canvas.itemconfig(self.canvas_window, width=event.width)
+ 
+    def _scroll_mouse(self, event):
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+ 
+    def _scroll_mouse_linux(self, event):
+        if event.num == 4:
+            self.canvas.yview_scroll(-1, "units")
+        elif event.num == 5:
+            self.canvas.yview_scroll(1, "units")
+ 
+    # ──────────────────────────────────────────
+    #  OPERAÇÕES DE TAREFA
+    # ──────────────────────────────────────────
+    def _adicionar_tarefa(self):
+        """Lê o campo de entrada e adiciona uma nova tarefa à lista."""
+        texto = self.entrada.get().strip()
+ 
+        # Ignora se estiver vazio ou com o placeholder
+        if not texto or texto == "Nova tarefa...":
+            messagebox.showwarning("Atenção", "Digite o nome da tarefa antes de adicionar.")
+            return
+ 
+        # Cria a tarefa como dicionário
+        self.tarefas.append({"texto": texto, "feito": False})
+ 
+        # Limpa o campo
+        self.entrada.delete(0, "end")
+        self.entrada.insert(0, "Nova tarefa...")
+        self.entrada.config(fg="#888888")
+ 
+        # Redesenha a lista
+        self._renderizar_lista()
+ 
+    def _alternar_feito(self, indice):
+        """Marca/desmarca uma tarefa como concluída."""
+        self.tarefas[indice]["feito"] = not self.tarefas[indice]["feito"]
+        self._renderizar_lista()
+ 
+    def _editar_tarefa(self, indice):
+        """Abre um diálogo para editar o texto da tarefa."""
+        texto_atual = self.tarefas[indice]["texto"]
+        novo_texto = simpledialog.askstring(
+            "Editar Tarefa",
+            "Novo nome da tarefa:",
+            initialvalue=texto_atual,
+            parent=self.root,
+        )
+        if novo_texto and novo_texto.strip():
+            self.tarefas[indice]["texto"] = novo_texto.strip()
+            self._renderizar_lista()
+ 
+    def _excluir_tarefa(self, indice):
+        """Remove uma tarefa da lista após confirmação."""
+        confirmar = messagebox.askyesno(
+            "Excluir",
+            f'Excluir a tarefa "{self.tarefas[indice]["texto"]}"?',
+            parent=self.root,
+        )
+        if confirmar:
+            self.tarefas.pop(indice)
+            self._renderizar_lista()
+ 
+    # ──────────────────────────────────────────
+    #  RENDERIZAÇÃO DA LISTA
+    # ──────────────────────────────────────────
+    def _renderizar_lista(self):
+        """Apaga e recria todos os widgets de tarefa na lista."""
+ 
+        # Remove todos os widgets antigos
+        for widget in self.frame_lista.winfo_children():
+            widget.destroy()
+ 
+        if not self.tarefas:
+            # Mensagem amigável quando não há tarefas
+            tk.Label(
+                self.frame_lista,
+                text="Nenhuma tarefa ainda.\nDigite acima e clique em + Adicionar!",
+                font=("Segoe UI", 10),
+                bg=COR_FUNDO,
+                fg="#666666",
+                justify="center",
+            ).pack(pady=40)
+            return
+ 
+        # Cria um card para cada tarefa
+        for i, tarefa in enumerate(self.tarefas):
+            self._criar_card_tarefa(i, tarefa)
+ 
+    def _criar_card_tarefa(self, indice, tarefa):
+        """Cria o widget visual de uma única tarefa."""
+ 
+        feito = tarefa["feito"]
+ 
+        # ── Frame do card ──
+        card = tk.Frame(
+            self.frame_lista,
+            bg=COR_ITEM,
+            relief="flat",
+            bd=0,
+        )
+        card.pack(fill="x", pady=4, ipady=2)
+ 
+        # ── Checkbox ──────────────────────────
+        # Usamos um BooleanVar para controlar o estado do checkbox
+        var_check = tk.BooleanVar(value=feito)
+        check = tk.Checkbutton(
+            card,
+            variable=var_check,
+            bg=COR_ITEM,
+            activebackground=COR_ITEM,
+            selectcolor=COR_INPUT,
+            cursor="hand2",
+            command=lambda idx=indice: self._alternar_feito(idx),
+        )
+        check.pack(side="left", padx=(10, 4), pady=10)
+ 
+        # ── Texto da tarefa ───────────────────
+        # Se concluída: texto cinza com linha no meio (overstrike)
+        fonte_tarefa = (
+            ("Segoe UI", 11, "overstrike") if feito else ("Segoe UI", 11)
+        )
+        cor_texto = COR_TEXTO_FEITO if feito else COR_TEXTO
+ 
+        label_texto = tk.Label(
+            card,
+            text=tarefa["texto"],
+            font=fonte_tarefa,
+            bg=COR_ITEM,
+            fg=cor_texto,
+            anchor="w",
+            wraplength=260,   # quebra linha se o texto for longo
+            justify="left",
+        )
+        label_texto.pack(side="left", fill="x", expand=True, padx=(2, 10), pady=10)
+ 
+        # ── Botão Editar (lápis) ──────────────
+        btn_editar = tk.Button(
+            card,
+            text="✏️",
+            font=("Segoe UI", 12),
+            bg=COR_ITEM,
+            fg=COR_LAPIS,
+            activebackground=COR_HOVER,
+            activeforeground=COR_TEXTO,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            padx=6,
+            pady=6,
+            command=lambda idx=indice: self._editar_tarefa(idx),
+        )
+        btn_editar.pack(side="left", padx=2)
+ 
+        # ── Botão Excluir (lixeira) ───────────
+        btn_excluir = tk.Button(
+            card,
+            text="🗑️",
+            font=("Segoe UI", 12),
+            bg=COR_ITEM,
+            fg=COR_LIXEIRA,
+            activebackground=COR_HOVER,
+            activeforeground=COR_LIXEIRA,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            padx=6,
+            pady=6,
+            command=lambda idx=indice: self._excluir_tarefa(idx),
+        )
+        btn_excluir.pack(side="left", padx=(2, 10))
+ 
+ 
+# ─────────────────────────────────────────────
+#  PONTO DE ENTRADA
+# ─────────────────────────────────────────────
+if __name__ == "_main_":
+    root = tk.Tk()
+    app = GerenciadorTarefas(root)
+    root.mainloop()
