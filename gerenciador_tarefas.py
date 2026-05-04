@@ -5,21 +5,21 @@ from tkinter import messagebox, simpledialog
 # ─────────────────────────────────────────────
 #  CONFIGURAÇÕES DE CORES E FONTES
 # ─────────────────────────────────────────────
-COR_FUNDO        = "#2b2b2b"   # Cinza escuro (fundo geral)
-COR_PAINEL       = "#3a3a3a"   # Cinza médio (painel de tarefas)
-COR_INPUT        = "#4a4a4a"   # Cinza claro (campo de texto)
-COR_BOTAO_ADD    = "#1a1a1a"   # Preto (botão adicionar)
-COR_TEXTO        = "#f0f0f0"   # Branco suave
-COR_TEXTO_FEITO  = "#888888"   # Cinza (tarefa concluída)
-COR_LIXEIRA      = "#e05555"   # Vermelho (botão excluir)
-COR_LAPIS        = "#cccccc"   # Branco acinzentado (botão editar)
-COR_ITEM         = "#454545"   # Fundo de cada tarefa
-COR_HOVER        = "#505050"   # Hover nos itens
+COR_FUNDO        = "#0f172a"
+COR_PAINEL       = "#1e293b"
+COR_INPUT        = "#1e293b"
+COR_BOTAO_ADD    = "#3b82f6"
+COR_TEXTO        = "#f1f5f9"
+COR_TEXTO_FEITO  = "#64748b"
+COR_LIXEIRA      = "#ef4444"
+COR_LAPIS        = "#60a5fa"
+COR_ITEM         = "#1e293b"
+COR_HOVER        = "#334155"
  
-FONTE_TITULO     = ("Segoe UI", 15, "bold")
-FONTE_INPUT      = ("Segoe UI", 11)
-FONTE_BOTAO      = ("Segoe UI", 10, "bold")
-FONTE_TAREFA     = ("Segoe UI", 11)
+FONTE_TITULO     = ("Calibri", 15, "bold")
+FONTE_INPUT      = ("Calibri", 11)
+FONTE_BOTAO      = ("Calibri", 10, "bold")
+FONTE_TAREFA     = ("Calibri", 11)
  
  
 # ─────────────────────────────────────────────
@@ -74,10 +74,11 @@ class GerenciadorTarefas:
         )
         self.entrada.pack(side="left", fill="x", expand=True, ipady=9, ipadx=10)
         self.entrada.insert(0, "Nova tarefa...")
-        self.entrada.config(fg="#888888")
+        self.entrada.config(fg="#64748b")
  
         # Placeholder: apaga o texto de dica ao clicar
         self.entrada.bind("<FocusIn>",  self._limpar_placeholder)
+        self.entrada.bind("<KeyPress>", self._limpar_placeholder)
         self.entrada.bind("<FocusOut>", self._restaurar_placeholder)
  
         # Pressionar Enter também adiciona a tarefa
@@ -90,7 +91,7 @@ class GerenciadorTarefas:
             font=FONTE_BOTAO,
             bg=COR_BOTAO_ADD,
             fg=COR_TEXTO,
-            activebackground="#333333",
+            activebackground="#1d4ed8",
             activeforeground=COR_TEXTO,
             relief="flat",
             cursor="hand2",
@@ -146,7 +147,7 @@ class GerenciadorTarefas:
     def _restaurar_placeholder(self, event):
         if not self.entrada.get().strip():
             self.entrada.insert(0, "Nova tarefa...")
-            self.entrada.config(fg="#888888")
+            self.entrada.config(fg="#64748b")
  
     # ──────────────────────────────────────────
     #  SCROLL
@@ -185,7 +186,7 @@ class GerenciadorTarefas:
         # Limpa o campo
         self.entrada.delete(0, "end")
         self.entrada.insert(0, "Nova tarefa...")
-        self.entrada.config(fg="#888888")
+        self.entrada.config(fg="#64748b")
  
         # Redesenha a lista
         self._renderizar_lista()
@@ -236,7 +237,7 @@ class GerenciadorTarefas:
                 text="Nenhuma tarefa ainda.\nDigite acima e clique em + Adicionar!",
                 font=("Segoe UI", 10),
                 bg=COR_FUNDO,
-                fg="#666666",
+                fg="#64748b",
                 justify="center",
             ).pack(pady=40)
             return
@@ -332,7 +333,7 @@ class GerenciadorTarefas:
 # ─────────────────────────────────────────────
 #  PONTO DE ENTRADA
 # ─────────────────────────────────────────────
-if __name__ == "_main_":
+if __name__ == "__main__":
     root = tk.Tk()
     app = GerenciadorTarefas(root)
     root.mainloop()
