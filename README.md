@@ -60,7 +60,7 @@ Não há dependências externas, pois o Tkinter é distribuído junto ao Python.
 ### 5.1 Clonar o repositório
 
 ```bash
-git clone https://github.com/[SEU-USUARIO/SEU-REPOSITORIO.git](https://github.com/victoriapacch/grp18/)
+git clone https://github.com/victoriapacch/grp18/
 ```
 
 ### 5.2 Acessar o diretório do projeto
