@@ -66,19 +66,19 @@ git clone https://github.com/victoriapacch/grp18/
 ### 5.2 Acessar o diretório do projeto
 
 ```bash
-cd SEU-REPOSITORIO
+cd grp18
 ```
 
 ### 5.3 Executar a aplicação
 
 ```bash
-python nome_do_arquivo.py
+python gerenciador_tarefas.py
 ```
 
 ou
 
 ```bash
-python3 nome_do_arquivo.py
+python3 gerenciador_tarefas.py
 ```
 
 ---
@@ -176,7 +176,7 @@ A aplicação não implementa persistência. Os dados são mantidos apenas em me
 Utilizar o comando:
 
 ```bash
-python nome_do_arquivo.py
+python gerenciador_tarefas.py
 ```
 
 ### Linux
@@ -190,7 +190,7 @@ sudo apt-get install python3-tk
 Execução:
 
 ```bash
-python3 nome_do_arquivo.py
+python3 gerenciador_tarefas.py
 ```
 
 ### macOS
@@ -204,7 +204,7 @@ brew install python-tk
 Execução:
 
 ```bash
-python3 nome_do_arquivo.py
+python3 gerenciador_tarefas.py
 ```
 
 ---
