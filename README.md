@@ -1,8 +1,6 @@
 # Projeto de Prática Profissional em ADS
 ## Grupo 18
 
-## Descrição
-
 Aplicação desktop desenvolvida em Python com a biblioteca Tkinter para gerenciamento de tarefas pessoais. O sistema permite criar, editar, excluir e marcar tarefas como concluídas por meio de uma interface gráfica responsiva.
 
 ### Pré-requisitos
